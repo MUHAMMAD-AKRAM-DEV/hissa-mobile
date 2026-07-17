@@ -106,6 +106,12 @@ class _DiscoverTabState extends State<DiscoverTab> {
 
   void _open(Property p) => Navigator.push(context, MaterialPageRoute(builder: (_) => PropertyDetailScreen(p: p)));
 
+  static String _titleCase(String s) => s
+      .split(' ')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+      .join(' ');
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Property>>(
@@ -129,9 +135,17 @@ class _DiscoverTabState extends State<DiscoverTab> {
         if (!snap.hasData) return const Center(child: Text('No properties'));
 
         final all = snap.data!;
-        final cities = ['All', ...{for (final p in all) p.city}];
+        // "karachi" and "Karachi" are the same city — fold them, and show
+        // each one nicely capitalised.
+        final cityMap = <String, String>{};
+        for (final p in all) {
+          final key = p.city.trim().toLowerCase();
+          if (key.isEmpty) continue;
+          cityMap.putIfAbsent(key, () => _titleCase(p.city.trim()));
+        }
+        final cities = ['All', ...cityMap.values];
         var list = all.where((p) {
-          if (cityFilter != 'All' && p.city != cityFilter) return false;
+          if (cityFilter != 'All' && p.city.trim().toLowerCase() != cityFilter.toLowerCase()) return false;
           if (typeFilter != 'All' && p.type != typeFilter) return false;
           if (query.trim().isNotEmpty && !'${p.title} ${p.area} ${p.city}'.toLowerCase().contains(query.toLowerCase())) return false;
           return true;
@@ -140,7 +154,8 @@ class _DiscoverTabState extends State<DiscoverTab> {
 
         final maxYield = all.map((p) => p.expectedYield).reduce((a, b) => a > b ? a : b);
         final avgYield = all.map((p) => p.expectedYield).reduce((a, b) => a + b) / all.length;
-        final investors = all.map((p) => p.investors).reduce((a, b) => a + b);
+        // cheapest way in — real, unlike an investor count the API doesn't send
+        final minShare = all.map((p) => p.sharePrice).reduce((a, b) => a < b ? a : b);
         final featured = [...all]..sort((a, b) => b.fundedPct - a.fundedPct);
         final resCount = all.where((p) => p.type == 'Residential').length;
         final comCount = all.where((p) => p.type == 'Commercial').length;
@@ -152,7 +167,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
           color: AppColors.brand,
           child: ListView(padding: EdgeInsets.zero, children: [
             _header(),
-            _hero(maxYield, avgYield, investors),
+            _hero(maxYield, avgYield, all.length, minShare),
             _trustChips(),
             _search(),
             _chips(cities),
@@ -231,7 +246,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
     ]),
   );
 
-  Widget _hero(double maxYield, double avgYield, int investors) => Container(
+  Widget _hero(double maxYield, double avgYield, int count, int minShare) => Container(
     margin: const EdgeInsets.fromLTRB(20, 8, 20, 4),
     padding: const EdgeInsets.all(22),
     decoration: BoxDecoration(
@@ -254,8 +269,8 @@ class _DiscoverTabState extends State<DiscoverTab> {
       const SizedBox(height: 14),
       Row(children: [
         _heroStat('${avgYield.toStringAsFixed(1)}%', 'Avg. yield'),
-        _heroStat('4', 'Properties'),
-        _heroStat(grp(investors), 'Investors'),
+        _heroStat('$count', count == 1 ? 'Property' : 'Properties'),
+        _heroStat(kpkr(minShare), 'From'),
       ]),
     ]),
   );

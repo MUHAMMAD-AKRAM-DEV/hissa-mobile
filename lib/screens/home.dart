@@ -12,6 +12,7 @@ import 'portfolio.dart';
 import 'wallet.dart';
 import 'settings.dart';
 import 'notifications.dart';
+import 'marketplace.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onLogout;
@@ -22,21 +23,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int nav = 0;
+  int tick = 0; // bumped on every tab switch so the tab reloads fresh data
 
   @override
   Widget build(BuildContext context) {
+    // Keyed by tick: switching tabs rebuilds them, so Portfolio/Wallet always
+    // show current data after an investment, deposit or sale.
     final tabs = [
-      const DiscoverTab(),
-      const PortfolioTab(),
-      const WalletTab(),
-      SettingsTab(onLogout: widget.onLogout),
+      DiscoverTab(key: ValueKey('discover-$tick')),
+      PortfolioTab(key: ValueKey('portfolio-$tick')),
+      WalletTab(key: ValueKey('wallet-$tick')),
+      SettingsTab(key: ValueKey('settings-$tick'), onLogout: widget.onLogout),
     ];
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(children: [
           Expanded(child: tabs[nav]),
-          _BottomNav(index: nav, onTap: (i) => setState(() => nav = i)),
+          _BottomNav(index: nav, onTap: (i) => setState(() { nav = i; tick++; })),
         ]),
       ),
     );
@@ -85,6 +89,11 @@ class DiscoverTab extends StatefulWidget {
 class _DiscoverTabState extends State<DiscoverTab> {
   final _service = PropertyService();
   late Future<List<Property>> _future;
+
+  Future<void> _refresh() async {
+    setState(() => _future = _service.getProperties());
+    await _future;
+  }
   String cityFilter = 'All';
   String typeFilter = 'All';
   String query = '';
@@ -138,61 +147,67 @@ class _DiscoverTabState extends State<DiscoverTab> {
 
         final boxW = (MediaQuery.of(context).size.width - 40 - 14) / 2;
 
-        return ListView(padding: EdgeInsets.zero, children: [
-          _header(),
-          _hero(maxYield, avgYield, investors),
-          _trustChips(),
-          _search(),
-          _chips(cities),
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          color: AppColors.brand,
+          child: ListView(padding: EdgeInsets.zero, children: [
+            _header(),
+            _hero(maxYield, avgYield, investors),
+            _trustChips(),
+            _search(),
+            _chips(cities),
 
-          if (query.isEmpty && cityFilter == 'All' && typeFilter == 'All') ...[
-            _sectionHead('Featured', trailing: 'Swipe →'),
-            _featuredCarousel(featured),
-          ],
+            if (query.isEmpty && cityFilter == 'All' && typeFilter == 'All') ...[
+              _sectionHead('Featured', trailing: 'Swipe →'),
+              _featuredCarousel(featured),
+            ],
 
-          _sectionHead('Browse by type'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(children: [
-              _typeCard('Residential', Icons.home_work_outlined, resCount),
-              const SizedBox(width: 12),
-              _typeCard('Commercial', Icons.storefront_outlined, comCount),
-            ]),
-          ),
-
-          _sectionHead(typeFilter == 'All' ? 'Properties' : typeFilter, trailing: '${list.length} available'),
-          if (list.isEmpty)
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), child: Text('No properties match your filters.', style: TextStyle(color: AppColors.muted)))
-          else
+            _sectionHead('Browse by type'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Wrap(
-                spacing: 14, runSpacing: 14,
-                children: list.map((p) => SizedBox(width: boxW, child: SmallBox(p: p, onTap: () => _open(p)))).toList(),
-              ),
+              child: Row(children: [
+                _typeCard('Residential', Icons.home_work_outlined, resCount),
+                const SizedBox(width: 12),
+                _typeCard('Commercial', Icons.storefront_outlined, comCount),
+              ]),
             ),
 
-          _sectionHead('Why Hissa'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(children: [
-              _benefit(Icons.savings_outlined, 'From PKR 5k', 'Low entry'),
-              const SizedBox(width: 10),
-              _benefit(Icons.payments_outlined, 'Monthly', 'Rental income'),
-              const SizedBox(width: 10),
-              _benefit(Icons.handshake_outlined, 'Managed', 'Hands-off'),
-            ]),
-          ),
+            _marketplaceBanner(),
 
-          _sectionHead('How Hissa works'),
-          _howStep(1, 'Browse & invest', 'Pick a vetted property and buy shares from PKR 5,000.'),
-          _howStep(2, 'Earn monthly rent', 'Your share of the rent lands in your wallet every month.'),
-          _howStep(3, 'Exit anytime', 'Sell your shares on the in-app marketplace.'),
+            _sectionHead(typeFilter == 'All' ? 'Properties' : typeFilter, trailing: '${list.length} available'),
+            if (list.isEmpty)
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), child: Text('No properties match your filters.', style: TextStyle(color: AppColors.muted)))
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Wrap(
+                  spacing: 14, runSpacing: 14,
+                  children: list.map((p) => SizedBox(width: boxW, child: SmallBox(p: p, onTap: () => _open(p)))).toList(),
+                ),
+              ),
 
-          _referralCard(),
-          _aboutCard(),
-          const SizedBox(height: 16),
-        ]);
+            _sectionHead('Why Hissa'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(children: [
+                _benefit(Icons.savings_outlined, 'From PKR 5k', 'Low entry'),
+                const SizedBox(width: 10),
+                _benefit(Icons.payments_outlined, 'Monthly', 'Rental income'),
+                const SizedBox(width: 10),
+                _benefit(Icons.handshake_outlined, 'Managed', 'Hands-off'),
+              ]),
+            ),
+
+            _sectionHead('How Hissa works'),
+            _howStep(1, 'Browse & invest', 'Pick a vetted property and buy shares from PKR 5,000.'),
+            _howStep(2, 'Earn monthly rent', 'Your share of the rent lands in your wallet every month.'),
+            _howStep(3, 'Exit anytime', 'Sell your shares on the in-app marketplace.'),
+
+            _referralCard(),
+            _aboutCard(),
+            const SizedBox(height: 16),
+          ]),
+        );
       },
     );
   }
@@ -356,6 +371,32 @@ class _DiscoverTabState extends State<DiscoverTab> {
         Text(sub, style: const TextStyle(fontSize: 13, color: AppColors.muted, height: 1.4)),
       ])),
     ]),
+  );
+
+  // Entry point to the secondary market.
+  Widget _marketplaceBanner() => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+    child: GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MarketplaceScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.tint,
+          border: Border.all(color: AppColors.line),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(children: [
+          Container(width: 44, height: 44, decoration: BoxDecoration(color: AppColors.tile, borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.storefront_outlined, color: AppColors.brand, size: 21)),
+          const SizedBox(width: 14),
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Marketplace', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+            SizedBox(height: 2),
+            Text('Buy shares from other investors', style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
+          ])),
+          const Icon(Icons.chevron_right, color: AppColors.muted),
+        ]),
+      ),
+    ),
   );
 
   Widget _referralCard() => Container(

@@ -110,25 +110,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = C.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: c.bg,
       appBar: AppBar(title: const Text('Notifications')),
       body: loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.brand))
+          ? Center(child: CircularProgressIndicator(color: c.brand))
           : items.isEmpty
-          ? const Center(child: Padding(
-        padding: EdgeInsets.all(30),
+          ? Center(child: Padding(
+        padding: const EdgeInsets.all(30),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.notifications_none, size: 44, color: AppColors.muted),
-          SizedBox(height: 12),
-          Text('Nothing yet', style: TextStyle(fontWeight: FontWeight.w700)),
-          SizedBox(height: 4),
-          Text('Your activity will show up here.', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          Icon(Icons.notifications_none, size: 44, color: c.muted),
+          const SizedBox(height: 12),
+          const Text('Nothing yet', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text('Your activity will show up here.', style: TextStyle(fontSize: 13, color: c.muted)),
         ]),
       ))
           : RefreshIndicator(
         onRefresh: _load,
-        color: AppColors.brand,
+        color: c.brand,
         child: ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: items.length,
@@ -138,20 +139,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             return Container(
               padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
               decoration: BoxDecoration(
-                color: fresh ? AppColors.tint : Colors.white,
-                border: const Border(bottom: BorderSide(color: AppColors.line)),
+                color: fresh ? c.tint : c.card,
+                border: Border(bottom: BorderSide(color: c.line)),
               ),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.tile, borderRadius: BorderRadius.circular(12)), child: Icon(n.icon, size: 19, color: AppColors.brand)),
+                Container(width: 42, height: 42, decoration: BoxDecoration(color: c.tile, borderRadius: BorderRadius.circular(12)), child: Icon(n.icon, size: 19, color: c.brand)),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(n.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                   const SizedBox(height: 3),
-                  Text(n.sub, style: const TextStyle(fontSize: 12.5, color: AppColors.muted, height: 1.45)),
+                  Text(n.sub, style: TextStyle(fontSize: 12.5, color: c.muted, height: 1.45)),
                   const SizedBox(height: 5),
-                  Text(n.ago, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                  Text(n.ago, style: TextStyle(fontSize: 11, color: c.muted)),
                 ])),
-                if (fresh) Container(margin: const EdgeInsets.only(top: 6), width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle)),
+                if (fresh) Container(margin: const EdgeInsets.only(top: 6), width: 8, height: 8, decoration: BoxDecoration(color: c.gold, shape: BoxShape.circle)),
               ]),
             );
           },

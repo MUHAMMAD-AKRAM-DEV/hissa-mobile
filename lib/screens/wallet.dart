@@ -40,16 +40,17 @@ class _WalletTabState extends State<WalletTab> {
 
   @override
   Widget build(BuildContext context) {
+    final c = C.of(context);
     if (loading) {
-      return const Center(child: Padding(padding: EdgeInsets.only(top: 80), child: CircularProgressIndicator(color: AppColors.brand)));
+      return Center(child: Padding(padding: EdgeInsets.only(top: 80), child: CircularProgressIndicator(color: c.brand)));
     }
     if (error != null) {
       return Center(child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.error_outline, color: AppColors.negative, size: 36),
+          Icon(Icons.error_outline, color: c.negative, size: 36),
           const SizedBox(height: 12),
-          Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
+          Text(error!, textAlign: TextAlign.center, style: TextStyle(color: c.muted)),
           const SizedBox(height: 12),
           TextButton(onPressed: _load, child: const Text('Retry')),
         ]),
@@ -58,7 +59,7 @@ class _WalletTabState extends State<WalletTab> {
 
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.brand,
+      color: c.brand,
       child: ListView(padding: EdgeInsets.zero, children: [
         const Padding(
           padding: EdgeInsets.fromLTRB(20, 16, 20, 6),
@@ -70,7 +71,7 @@ class _WalletTabState extends State<WalletTab> {
           margin: const EdgeInsets.fromLTRB(20, 8, 20, 4),
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.brand, AppColors.brandDeep]),
+            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [c.brand, c.brandDeep]),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [BoxShadow(color: const Color(0xFF073E36).withValues(alpha: 0.32), blurRadius: 28, offset: const Offset(0, 14))],
           ),
@@ -93,14 +94,14 @@ class _WalletTabState extends State<WalletTab> {
         ),
 
         if (txns.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(20, 30, 20, 30),
             child: Column(children: [
-              Icon(Icons.receipt_long_outlined, size: 40, color: AppColors.muted),
+              Icon(Icons.receipt_long_outlined, size: 40, color: c.muted),
               SizedBox(height: 12),
               Text('No transactions yet', style: TextStyle(fontWeight: FontWeight.w700)),
               SizedBox(height: 4),
-              Text('Deposit funds to get started.', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+              Text('Deposit funds to get started.', style: TextStyle(fontSize: 13, color: c.muted)),
             ]),
           )
         else
@@ -124,29 +125,33 @@ class _WalletTabState extends State<WalletTab> {
     ),
   );
 
-  Widget _txnRow(WalletTxn t) => Container(
-    padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.line))),
-    child: Row(children: [
-      Container(
-        width: 40, height: 40,
-        decoration: BoxDecoration(color: AppColors.tile, borderRadius: BorderRadius.circular(12)),
-        child: Icon(t.isCredit ? Icons.south_west : Icons.north_east, size: 18, color: t.isCredit ? AppColors.positive : AppColors.ink),
-      ),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(t.description.isEmpty ? (t.isCredit ? 'Deposit' : 'Withdrawal') : t.description,
-            maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 2),
-        Text(t.dateLabel, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-      ])),
-      Text('${t.isCredit ? '+' : '−'}${money(t.amountPkr)}',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: t.isCredit ? AppColors.positive : AppColors.ink)),
-    ]),
-  );
+  Widget _txnRow(WalletTxn t) {
+    final c = C.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: c.line))),
+      child: Row(children: [
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(color: c.tile, borderRadius: BorderRadius.circular(12)),
+          child: Icon(t.isCredit ? Icons.south_west : Icons.north_east, size: 18, color: t.isCredit ? c.positive : c.ink),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(t.description.isEmpty ? (t.isCredit ? 'Deposit' : 'Withdrawal') : t.description,
+              maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(t.dateLabel, style: TextStyle(fontSize: 12, color: c.muted)),
+        ])),
+        Text('${t.isCredit ? '+' : '−'}${money(t.amountPkr)}',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: t.isCredit ? c.positive : c.ink)),
+      ]),
+    );
+  }
 
   // deposit / withdraw sheet
   void _sheet(bool isDeposit) {
+    final c = C.of(context);
     final amount = TextEditingController();
     bool busy = false;
     String? sheetError;
@@ -154,18 +159,18 @@ class _WalletTabState extends State<WalletTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheet) => Padding(
           padding: EdgeInsets.fromLTRB(22, 18, 22, MediaQuery.of(ctx).viewInsets.bottom + 22),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: AppColors.line, borderRadius: BorderRadius.circular(99)))),
+            Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: c.line, borderRadius: BorderRadius.circular(99)))),
             const SizedBox(height: 16),
             Text(isDeposit ? 'Deposit funds' : 'Withdraw funds', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
             Text(isDeposit ? 'Test deposit — no real payment is taken yet.' : 'Available: ${money(balance)}',
-                style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                style: TextStyle(fontSize: 13, color: c.muted)),
             const SizedBox(height: 18),
             TextField(
               controller: amount,
@@ -176,11 +181,11 @@ class _WalletTabState extends State<WalletTab> {
                 prefixText: 'PKR  ',
                 hintText: '10000',
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.line, width: 1.5)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.brand, width: 1.5)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: c.line, width: 1.5)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: c.brand, width: 1.5)),
               ),
             ),
-            if (sheetError != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(sheetError!, style: const TextStyle(color: AppColors.negative, fontSize: 13))),
+            if (sheetError != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(sheetError!, style: TextStyle(color: c.negative, fontSize: 13))),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
@@ -207,7 +212,7 @@ class _WalletTabState extends State<WalletTab> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.ink, foregroundColor: Colors.white,
+                  backgroundColor: c.btn, foregroundColor: c.onBtn,
                   disabledBackgroundColor: const Color(0xFFB8C2BE), elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

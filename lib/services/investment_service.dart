@@ -84,7 +84,9 @@ class InvestmentService {
     grouped.forEach((propertyId, rows) {
       final prop = byId[propertyId];
       if (prop == null) return; // property deleted/unknown -> skip
+      // Sales are negative records, so summing gives the true net position.
       final shares = rows.fold<int>(0, (s, r) => s + r.shares);
+      if (shares <= 0) return; // fully sold out of this property -> not a holding
       final invested = rows.fold<double>(0, (s, r) => s + r.total);
       final dates = rows.map((r) => r.createdAt).toList()..sort();
       out.add(PortfolioHolding(property: prop, shares: shares, invested: invested, firstDate: dates.first));

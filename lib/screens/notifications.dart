@@ -89,10 +89,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         for (final r in records) {
           final name = byId[r.propertyId]?.title ?? 'a property';
           final when = DateTime.tryParse(r.createdAt) ?? DateTime.now();
+          // Sales on the secondary market are stored as NEGATIVE records.
+          final sold = r.shares < 0;
+          final count = r.shares.abs();
           out.add(_Activity(
-            Icons.apartment,
-            'Investment confirmed',
-            'You bought ${grp(r.shares)} share${r.shares == 1 ? '' : 's'} in $name for ${pkr(r.total)}.',
+            sold ? Icons.storefront : Icons.apartment,
+            sold ? 'Shares sold' : 'Investment confirmed',
+            sold
+                ? 'You sold ${grp(count)} share${count == 1 ? '' : 's'} in $name for ${pkr(r.total.abs())}.'
+                : 'You bought ${grp(count)} share${count == 1 ? '' : 's'} in $name for ${pkr(r.total)}.',
             when,
           ));
         }
